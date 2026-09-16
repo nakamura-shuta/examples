@@ -4,7 +4,7 @@ NVIDIA Technical Blog の [Introducing CUDA Rust: Two Tracks for Writing GPU Ker
 cuda-oxide（SIMT）と cutile-rs（Tile）の両方を AWS の NVIDIA L4（g6.xlarge）と Apple Silicon の Linux（OrbStack）で動かしたときのメモです。
 解説記事の付録にあたる内容で、セットアップでつまずいた点、GPU が無い環境でどこまでできるか、同梱サンプルの実行結果、プロファイラの数値を置いています。
 
-記事本体：[CUDA Rust を試す：cuda-oxide と cutile-rs の2トラックを L4 で動かして比べる](https://dev.classmethod.jp/articles/cuda-rust-complete-guide-gpu-programming/)
+記事本体：[[GPU] CUDA Rustを試してみる](https://dev.classmethod.jp/articles/cuda-rust-complete-guide-gpu-programming/)
 
 検証したバージョンは cuda-oxide `cargo-oxide` v0.2.1（コミット 26754ae5）、cutile-rs 0.3.1、CUDA Toolkit 13.2 / 13.3、2026年9月時点のものです。
 どちらのプロジェクトも early-stage なので、現在の仕様とは違っている可能性があります。
