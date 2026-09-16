@@ -17,7 +17,9 @@ cuda-oxide（SIMT）と cutile-rs（Tile）の両方を AWS の NVIDIA L4（g6.x
 - [D. 自作 softmax の補足](#d-自作-softmax-の補足)
 - [E. 測定環境](#e-測定環境)
 - [F. 論文の性能数値](#f-論文の性能数値)
+- [OrbStack（GPU なし）での環境構築の全コマンド](#orbstackgpu-なしでの環境構築の全コマンド)
 - [記事で自作したカーネル](#記事で自作したカーネル)
+- [参考リンク](#参考リンク)
 
 ## A. セットアップの補足
 
@@ -477,6 +479,62 @@ cuTile Python が 7.01 TB/s で、ピークの 7.68 TB/s に近いところま�
 また論文自身も、一部の行列サイズで cuBLAS との性能差が残っていることを限界として挙げています。
 （Grout はモデルの GEMM で cuBLAS にフォールバック）
 
+## OrbStack（GPU なし）での環境構築の全コマンド
+
+記事の Setup 1 で使ったコマンドです。Apple Silicon の Mac に OrbStack で Ubuntu 24.04（aarch64）を作り、
+cuda-oxide のビルドと PTX 生成ができるところまで用意します。
+
+```bash
+brew install orbstack
+orb create ubuntu:24.04 cuda-build
+orb -m cuda-build uname -m     # aarch64
+```
+
+以降は作成した Linux マシンの中での作業です。
+
+
+```bash
+# ビルド依存
+sudo apt-get update
+sudo apt-get install -y build-essential pkg-config curl git wget \
+    lsb-release software-properties-common gnupg
+
+# Rust（cuda-oxide は固定 nightly が必要）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"
+rustup toolchain install nightly-2026-04-03
+rustup component add rust-src rustc-dev llvm-tools --toolchain nightly-2026-04-03
+
+# LLVM / Clang 21（Ubuntu 24.04 の標準 clang は 18 なので足りない）
+wget https://apt.llvm.org/llvm.sh && chmod +x llvm.sh
+sudo ./llvm.sh 21
+# llvm.sh は clang-21 / lld-21 / lldb-21 / clangd-21 を入れるが llc-21 は入れないので
+# llvm-21 を明示的に追加する
+sudo apt-get install -y llvm-21 libclang-21-dev libclang-cpp21-dev libclang-common-21-dev
+sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 100
+sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 100
+
+# CUDA Toolkit（ビルドに必要。GPU は無くてよい）
+# Apple Silicon 上の Linux は arm64 なので x86_64 ではなく sbsa リポジトリを使う
+cd /tmp
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt-get update
+sudo apt-get install -y cuda-toolkit-13-3
+
+export CUDA_TOOLKIT_PATH=/usr/local/cuda-13.3
+export PATH="$CUDA_TOOLKIT_PATH/bin:$PATH"
+export LD_LIBRARY_PATH="$CUDA_TOOLKIT_PATH/lib64:${LD_LIBRARY_PATH:-}"
+nvcc --version
+```
+
+Apple Silicon 上の Linux は aarch64 なので、
+CUDA のリポジトリは `x86_64` ではなく `sbsa`（NVIDIA の ARM サーバ向け）を使います。
+GPU が無いので `nvidia-smi` は動きませんが、ビルドにはそれで問題ありません。
+
+Apple Silicon 上の Linux は aarch64 なので、CUDA のリポジトリは `x86_64` ではなく `sbsa`（NVIDIA の ARM サーバ向け）を使います。
+GPU が無いので `nvidia-smi` は動きませんが、ビルドには問題ありません。
+
 ## 記事で自作したカーネル
 
 記事の Try 2 で書いた row-wise softmax のソースです。
@@ -503,3 +561,40 @@ cd kernels/softmax_simt && cargo oxide run
 # Tile 版（cutile-rs。stable Rust）
 cd kernels/softmax_tile && cargo run --release
 ```
+
+## 参考リンク
+
+記事で参照した一次情報です。
+
+- [Introducing CUDA Rust: Two Tracks for Writing GPU Kernels（NVIDIA Technical Blog）](https://developer.nvidia.com/blog/introducing-cuda-rust-two-tracks-for-writing-gpu-kernels/)
+- [NVlabs/cuda-oxide（GitHub）](https://github.com/NVlabs/cuda-oxide)
+- [cuda-oxide book](https://nvlabs.github.io/cuda-oxide/)
+- [cuda-oxide ecosystem appendix](https://nvlabs.github.io/cuda-oxide/appendix/ecosystem.html)
+- [NVlabs/cutile-rs（GitHub）](https://github.com/NVlabs/cutile-rs)
+- [cuTile Rust documentation](https://nvlabs.github.io/cutile-rs/main/)
+- [cutile（crates.io）](https://crates.io/crates/cutile)
+- [Fearless Concurrency on the GPU（arXiv:2606.15991）](https://arxiv.org/abs/2606.15991)
+- [CUDA Tile IR documentation](https://docs.nvidia.com/cuda/tile-ir/latest/index.html)
+- [CUDA Toolkit（NVIDIA）](https://developer.nvidia.com/cuda-toolkit)
+- [CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/)（[PDF 版・Release 13.4](https://docs.nvidia.com/cuda/cuda-programming-guide/pdf/cuda-programming-guide.pdf)）
+- [CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/)
+- [CUDA GPUs - Compute Capability（NVIDIA）](https://developer.nvidia.com/cuda/gpus)
+- [NVIDIA L4 製品ページ](https://www.nvidia.com/en-us/data-center/l4/)
+- [NVIDIA L4 データシート](https://dam-cdn.nvd.orangelogic.com/AssetLink/8f4cjsr458mk07kxxt608b1ct0t570x7.pdf)
+- [NVIDIA L4 製品ブリーフ（PB-11316-001）](https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/l4/PB-11316-001_v01.pdf)
+- [NVIDIA Ada GPU アーキテクチャ白書（L4 の L2 容量は Appendix D）](https://images.nvidia.com/aem-dam/Solutions/Data-Center/l4/nvidia-ada-gpu-architecture-whitepaper-V2.02.pdf)
+- [CUDA Toolkit 11.0 Release Notes（macOS 非対応の記述）](https://docs.nvidia.com/cuda/archive/11.0/cuda-toolkit-release-notes/index.html)
+- [CUDA Toolkit Archive](https://developer.nvidia.com/cuda-toolkit-archive)
+- [Amazon EC2 Accelerated Computing Instances](https://docs.aws.amazon.com/ec2/latest/instancetypes/ac.html)
+- [AWS Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 24.04) Release Notes](https://docs.aws.amazon.com/dlami/latest/devguide/aws-deep-learning-ami-gpubaseoss-ul2404-2026-09-02.html)
+- [OrbStack FAQ](https://docs.orbstack.dev/faq)
+- [OrbStack Linux machines](https://docs.orbstack.dev/machines)
+- [Grout（HuggingFace）](https://github.com/huggingface/grout)
+- [mistral.rs](https://github.com/EricLBuehler/mistral.rs)
+- [Rust-GPU/Rust-CUDA](https://github.com/Rust-GPU/Rust-CUDA)
+- [tracel-ai/cubecl（GitHub）](https://github.com/tracel-ai/cubecl)
+- [Rust running on every GPU（Rust GPU blog）](https://rust-gpu.github.io/blog/2025/07/25/rust-on-every-gpu/)
+- [gfx-rs/wgpu（GitHub）](https://github.com/gfx-rs/wgpu)
+- [objc2-metal（crates.io）](https://crates.io/crates/objc2-metal)
+- [pliron](https://github.com/pliron-org/pliron)
+- [nakamura-shuta/examples の cuda-rust（この検証メモ）](https://github.com/nakamura-shuta/examples/tree/main/cuda-rust)
