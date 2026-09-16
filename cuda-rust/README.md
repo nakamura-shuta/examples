@@ -407,7 +407,7 @@ Nsight Compute が短いカーネルやリプレイの都合でこうした値�
 | L1/TEX のグローバルロード セクタ数 | 131,072 | 262,144 |
 | L1/TEX のグローバルストア セクタ数 | 131,072 | 262,144 |
 | 実行命令数 | 2,064,384 | 2,211,840 |
-| レジスタ/スレッド | 19 | 19 |
+| スレッドあたりのレジスタ数 | 19 | 19 |
 | achieved occupancy | 83.32% | 83.58% |
 
 ncu のメトリクス名は順に `gpu__time_duration.sum`、`l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum`、
