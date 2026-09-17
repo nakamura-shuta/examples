@@ -160,7 +160,7 @@ LLVM 23 で挙動が変わっていることは認識されているようです
 
 ### B-4. GPU 無しで `cargo oxide run`
 
-記事の Try 1-1 のとおり、ビルドとリンクはできますが、実行するとエラーで止まります。book にこの挙動の説明があります。
+記事の「OrbStack（GPU なし）で PTX まで作る」のとおり、ビルドとリンクはできますが、実行するとエラーで止まります。book にこの挙動の説明があります。
 
 > The host runtime does not link `libcuda` at build time. The shared `cuda-bindings` crate loads it at the first driver call, so a binary starts without a driver and fails on that call with `CUDA_ERROR_NOT_INITIALIZED`; the error message names the library files the loader tried.
 
@@ -481,7 +481,7 @@ cuTile Python が 7.01 TB/s で、ピークの 7.68 TB/s に近いところま�
 
 ## OrbStack（GPU なし）での環境構築の全コマンド
 
-記事の Setup 1 で使ったコマンドです。Apple Silicon の Mac に OrbStack で Ubuntu 24.04（aarch64）を作り、
+記事の Setup「OrbStack で Linux 環境を作る」で使ったコマンドです。Apple Silicon の Mac に OrbStack で Ubuntu 24.04（aarch64）を作り、
 cuda-oxide のビルドと PTX 生成ができるところまで用意します。
 
 ```bash
@@ -537,7 +537,7 @@ GPU が無いので `nvidia-smi` は動きませんが、ビルドには問題�
 
 ## 記事で自作したカーネル
 
-記事の Try 2 で書いた row-wise softmax のソースです。
+記事の「softmax を両トラックで自作して比べる」で書いた row-wise softmax のソースです。
 そのままでは動かないので、`cargo oxide`（SIMT 版）または stable Rust（Tile 版）の環境を用意してください。手順は A を参照。
 
 | ディレクトリ | 内容 | L4 での測定値（batched） |
