@@ -1,0 +1,3 @@
+# 実験の出力（Claude Code のログを含む）
+runs/
+node_modules/
